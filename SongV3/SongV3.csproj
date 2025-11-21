@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <PackageReference Include="MySql.Data" Version="9.5.0" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="YoutubeExplode" Version="6.5.6" />
   </ItemGroup>
 
 </Project>

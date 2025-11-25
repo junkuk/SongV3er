@@ -14,4 +14,8 @@
     <PackageReference Include="YoutubeExplode" Version="6.5.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="NAudio\MediaFoundation\" />
+  </ItemGroup>
+
 </Project>

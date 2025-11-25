@@ -140,6 +140,11 @@ namespace SongV3
                 MessageBox.Show("Debe llenar todos los campos.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+            if(email.IndexOf('@') == -1|| email.IndexOf('.') == -1 || email.Length<9)
+            {
+                MessageBox.Show("Debe ingresar un correo electrónico válido.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             try
             {
@@ -160,9 +165,6 @@ namespace SongV3
                     cmd.Parameters.AddWithValue("@p_contrasena", contrasena); // Considera hashear la contraseña aquí
                     cmd.Parameters.AddWithValue("@p_email", email);
 
-                    // 4. Ejecutar el comando
-                    // Usamos ExecuteNonQuery() porque un INSERT no devuelve datos,
-                    // solo el número de filas afectadas.
                     int filas_afectadas = cmd.ExecuteNonQuery();
 
                     if (filas_afectadas > 0)

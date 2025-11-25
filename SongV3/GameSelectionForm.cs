@@ -147,7 +147,7 @@ namespace SongV3
             panel.Click += (s, e) => IniciarJuego(titulo == "Sigue la Letra" ? 1 : titulo == "Adivina Título y Artista" ? 2 : 3);
 
             Controls.Add(panel);
-            return new Button { Tag = panel }; // truco para que funcione el hover
+            return new Button { Tag = panel };
         }
         private void IniciarJuego(int modo)
         {

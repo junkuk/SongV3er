@@ -1,5 +1,6 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
+using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -66,8 +67,6 @@ namespace SongV3
             btnEstadisticas = CreateMenuButton("Estadísticas", centerX, startY + (buttonHeight + spacing) * 2);
             btnEstadisticas.Click += btnEstadisticas_Click;
 
-            btnConfiguracion = CreateMenuButton("Configuración", centerX, startY + (buttonHeight + spacing) * 3);
-            btnConfiguracion.Click += btnConfiguracion_Click;
 
             btnSalir = CreateMenuButton("Salir", centerX, startY + (buttonHeight + spacing) * 4);
             btnSalir.BackColor = Color.FromArgb(220, 53, 69);
@@ -108,25 +107,42 @@ namespace SongV3
 
         private void btnHistorial_Click(object sender, EventArgs e)
         {
+
+            int idUsuario = 0;
+            using (var cn = conexion.ObtenerConexion())
+            {
+                cn.Open();
+                using (var cmd = new MySqlCommand("sp_ObtenerIdUsuario", cn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@p_Username", this.username);
+                    idUsuario = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+            }
+
             this.Hide();
-            HistorialForm historial = new HistorialForm();
+            HistorialForm historial = new HistorialForm(idUsuario);
             historial.ShowDialog();
             this.Show();
         }
 
         private void btnEstadisticas_Click(object sender, EventArgs e)
         {
-            this.Hide();
-            EstadisticasForm stats = new EstadisticasForm();
-            stats.ShowDialog();
-            this.Show();
-        }
+            int idUsuario = 0;
+            using (var cn = conexion.ObtenerConexion())
+            {
+                cn.Open();
+                using (var cmd = new MySqlCommand("sp_ObtenerIdUsuario", cn)) 
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@p_Username", this.username);
+                    idUsuario = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+            }
 
-        private void btnConfiguracion_Click(object sender, EventArgs e)
-        {
             this.Hide();
-            ConfiguracionForm config = new ConfiguracionForm();
-            config.ShowDialog();
+            EstadisticasForm stats = new EstadisticasForm(idUsuario);
+            stats.ShowDialog();
             this.Show();
         }
 

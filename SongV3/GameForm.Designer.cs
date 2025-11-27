@@ -180,7 +180,7 @@
                 AutoSize = true,
                 TextAlign = ContentAlignment.MiddleCenter
             };
-            lblTitulo.Location = new Point((this.ClientSize.Width - lblTitulo.Width) / 2, 40);
+            lblTitulo.Location = new Point(100, 40);
             Controls.Add(lblTitulo);
 
             // lblRonda
@@ -200,7 +200,7 @@
                 Font = new Font("Segoe UI", 14, FontStyle.Bold),
                 ForeColor = Color.FromArgb(46, 204, 113),
                 AutoSize = true,
-                Location = new Point(this.ClientSize.Width - Margen - 150, 100) // alineado a la derecha
+                Location = new Point(this.ClientSize.Width - Margen - 150, 120) // alineado a la derecha
             };
             Controls.Add(lblRonda);
             Controls.Add(lblScore);
@@ -448,6 +448,9 @@
             btnVerificar.Click += BtnVerificar_Click;
             Controls.Add(btnVerificar);
         }
+
+        // valores generales de altura y ancho
+        
         #region Windows Form Designer generated code
 
         /// <summary>

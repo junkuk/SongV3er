@@ -15,17 +15,15 @@ namespace SongV3
         private Button btnModo2;
         private Button btnModo3;
         private Button btnVolver;
-        private object username;
+        private string _usernameActual;
 
         private void btnModo1_Click(object sender, EventArgs e) => IniciarJuego(1);
         private void btnModo2_Click(object sender, EventArgs e) => IniciarJuego(2);
         private void btnModo3_Click(object sender, EventArgs e) => IniciarJuego(3);
 
-        private readonly object userId;
-
-        public GameSelectionForm(object userId)
+        public GameSelectionForm(string username)
         {
-            this.userId = userId;
+            _usernameActual = username;
             InitializeComponent();
 
             this.Size = new System.Drawing.Size(900, 800);
@@ -108,9 +106,7 @@ namespace SongV3
             Controls.Add(btnModo1);
             Controls.Add(btnModo2);
             Controls.Add(btnModo3);
-
         }
-
         private Button CreateModeButton(string titulo, string descripcion, int x, int y, Color colorFondo)
         {
             Panel panel = new Panel
@@ -149,61 +145,77 @@ namespace SongV3
             Controls.Add(panel);
             return new Button { Tag = panel };
         }
-        private void IniciarJuego(int modo)
+        private async void IniciarJuego(int modo)
         {
+            // 1. Feedback visual inmediato
+            this.Cursor = Cursors.WaitCursor;
+            btnModo1.Enabled = false; // Evitar doble clic
+            btnModo2.Enabled = false;
+            btnModo3.Enabled = false;
+
             int newGameId = 0;
             int idUsuario = 0;
 
             try
             {
-                using (MySqlConnection cn = conexion.ObtenerConexion())
+                // 2. Ejecutar la BD en un hilo separado (NO BLOQUEA LA PANTALLA)
+                await Task.Run(() =>
                 {
-                    cn.Open();
-
-                    // 1. Obtenemos el Id_User real a partir del username
-                    // cambiar por SP
-                    string sqlUser = "SELECT Id_User FROM users WHERE Username = @username";
-                    using (MySqlCommand cmdUser = new MySqlCommand(sqlUser, cn))
+                    using (var cn = conexion.ObtenerConexion())
                     {
-                        cmdUser.Parameters.AddWithValue("@username", idUsuario); // this.username es string
-                        object res = cmdUser.ExecuteScalar();
+                        cn.Open();
 
-                        if (res == null || res == DBNull.Value)
+                        // Obtener ID Usuario
+                        using (var cmdUser = new MySqlCommand("sp_ObtenerIdUsuario", cn))
                         {
-                            MessageBox.Show("Usuario no encontrado en la base de datos.", "Error",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
+                            cmdUser.CommandType = CommandType.StoredProcedure;
+                            cmdUser.Parameters.AddWithValue("@p_Username", _usernameActual);
+                            var res = cmdUser.ExecuteScalar();
+                            if (res != null) idUsuario = Convert.ToInt32(res);
                         }
-                        idUsuario = Convert.ToInt32(res);
+
+                        // Crear Partida
+                        if (idUsuario > 0)
+                        {
+                            using (var cmd = new MySqlCommand("sp_IniciarJuego", cn))
+                            {
+                                cmd.CommandType = CommandType.StoredProcedure;
+                                cmd.Parameters.AddWithValue("@p_IdUser", idUsuario);
+
+                                // AGREGAR ESTA LÍNEA NUEVA:
+                                cmd.Parameters.AddWithValue("@p_GameMode", modo);
+
+                                var result = cmd.ExecuteScalar();
+                                if (result != null) newGameId = Convert.ToInt32(result);
+                            }
+                        }
                     }
+                });
 
-                    // 2. Creamos la partida con el Id_User correcto (int)
-                    using (MySqlCommand cmd = new MySqlCommand("sp_IniciarJuego", cn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@p_IdUser", idUsuario); // ← Ahora sí es int válido
-
-                        object result = cmd.ExecuteScalar();
-                        if (result != null)
-                            newGameId = Convert.ToInt32(result);
-                    }
-                }
-
+                // 3. Ya volvió de la BD, abrimos el juego
                 if (newGameId > 0)
                 {
                     this.Hide();
                     GameForm game = new GameForm(modo, newGameId, idUsuario);
                     game.ShowDialog();
-                    this.Close(); // o this.Hide() si quieres volver al menú
+                    this.Show(); // Volver a mostrar menú al cerrar juego
                 }
                 else
                 {
-                    MessageBox.Show("No se pudo crear la partida.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Error al iniciar partida.");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error crítico: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error: " + ex.Message);
+            }
+            finally
+            {
+                // Restaurar controles
+                this.Cursor = Cursors.Default;
+                btnModo1.Enabled = true;
+                btnModo2.Enabled = true;
+                btnModo3.Enabled = true;
             }
         }
     }

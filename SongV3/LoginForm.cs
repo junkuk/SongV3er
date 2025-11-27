@@ -17,7 +17,14 @@ namespace SongV3
         private Label lblContrasena;
         public LoginForm()
         {
-            InitializeComponent();       
+            InitializeComponent();
+            Task.Run(() => {
+                try
+                {
+                    conexion.TestConexion(); // Llama a tu método Test
+                }
+                catch { }
+            });
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -42,6 +49,7 @@ namespace SongV3
 
                 string sp_nombre = "sp_ValidarUsuario";
                 MySqlCommand cmd = new MySqlCommand(sp_nombre, cn);
+
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@p_nombre", usuario);
                 cmd.Parameters.AddWithValue("@p_contrasena", contrasena);

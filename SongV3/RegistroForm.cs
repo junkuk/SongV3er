@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using System.Drawing;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace SongV3
@@ -134,13 +135,25 @@ namespace SongV3
             string usuario = txtUsuario.Text.Trim();
             string contrasena = txtContrasena.Text.Trim();
             string email = txtEmail.Text.Trim();
-
-            if (usuario == "" || contrasena == "" || email == "")
+            if(usuario.Contains(' '))
             {
-                MessageBox.Show("Debe llenar todos los campos.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("No se permiten espacios.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            if(email.IndexOf('@') == -1|| email.IndexOf('.') == -1 || email.Length<9)
+
+            if (usuario == ""|| contrasena == "" || email == "")
+            {
+                MessageBox.Show("Debe llenar todos los campos.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                if (usuario.Length > 12)
+                {
+                    MessageBox.Show("No se permite nombre de usuario mayor a 12 letras.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                return;
+            }
+            string patronEmail = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+
+            if (string.IsNullOrWhiteSpace(email) || !Regex.IsMatch(email, patronEmail))
             {
                 MessageBox.Show("Debe ingresar un correo electrónico válido.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -148,21 +161,19 @@ namespace SongV3
 
             try
             {
-                // Asumiendo que 'conexion.ObtenerConexion()' te devuelve un MySqlConnection
                 using (MySqlConnection cn = conexion.ObtenerConexion())
                 {
                     cn.Open();
 
-                    // 1. Nombre del Stored Procedure
+                    // Nombre del Stored Procedure
                     string sp_nombre = "sp_RegistrarUsuario";
                     MySqlCommand cmd = new MySqlCommand(sp_nombre, cn);
 
-                    // 2. Especificar que el comando es un Stored Procedure (¡MUY IMPORTANTE!)
+                    // Especificar que el comando es un Stored Procedure (¡MUY IMPORTANTE!)
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    // 3. Añadir los parámetros (deben coincidir con los del SP)
                     cmd.Parameters.AddWithValue("@p_usuario", usuario);
-                    cmd.Parameters.AddWithValue("@p_contrasena", contrasena); // Considera hashear la contraseña aquí
+                    cmd.Parameters.AddWithValue("@p_contrasena", contrasena);
                     cmd.Parameters.AddWithValue("@p_email", email);
 
                     int filas_afectadas = cmd.ExecuteNonQuery();
@@ -177,11 +188,10 @@ namespace SongV3
                         this.Close();
                         this.Close();
                     }
-                } // El 'using' cierra automáticamente la conexión (cn.Close())
+                }
             }
-            catch (MySqlException myEx) // Captura errores específicos de MySQL
+            catch (MySqlException myEx)
             {
-                // Si el error es el que definimos en el SP (usuario duplicado)
                 if (myEx.Message.Contains("El nombre de usuario ya existe"))
                 {
                     MessageBox.Show(myEx.Message, "Error de Registro", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -191,7 +201,7 @@ namespace SongV3
                     MessageBox.Show("Error de base de datos: " + myEx.Message, "Error MySQL", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            catch (Exception ex) // Captura cualquier otro error general
+            catch (Exception ex)
             {
                 MessageBox.Show("Error al conectar: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
